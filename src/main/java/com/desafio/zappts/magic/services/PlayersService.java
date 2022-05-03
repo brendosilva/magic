@@ -3,10 +3,16 @@ package com.desafio.zappts.magic.services;
 import com.desafio.zappts.magic.dto.PlayersDTO;
 import com.desafio.zappts.magic.entities.Players;
 import com.desafio.zappts.magic.repositories.PlayersRepository;
+import com.desafio.zappts.magic.services.exceptions.ControllerNotFoundException;
+import com.desafio.zappts.magic.services.exceptions.EntitieAlreadyExists;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,20 +25,41 @@ public class PlayersService {
 
     @Transactional
     public PlayersDTO create(PlayersDTO playersDTO){
-        Players player = new Players();
-        copyDtoToEntity(playersDTO, player);
-        player = playersRepository.save(player);
-        return new PlayersDTO(player);
+        try {
+            Players players = new Players();
+            copyDtoToEntity(playersDTO, players);
+            players = playersRepository.save(players);
+            return new PlayersDTO(players);
+        } catch (DataIntegrityViolationException e) {
+            throw new EntitieAlreadyExists("player already exists");
+        }
+
     }
+
+
 
     @Transactional(readOnly = true)
     public List<PlayersDTO> listPlayers() {
         List<Players> players = playersRepository.findAll();
         return players.stream()
-                .map(x -> new PlayersDTO(x.getId(),x.getName(), x.getUsername()))
+                .map(x -> new PlayersDTO(x.getId(),x.getName()))
                 .collect(Collectors.toList());
 
     }
+
+    @Transactional
+    public PlayersDTO update(Long id, PlayersDTO dto) {
+        try {
+            Players players = playersRepository.getById(id);
+            copyDtoToEntity(dto, players);
+            players = playersRepository.save(players);
+            return new PlayersDTO(players);
+        } catch (EntityNotFoundException e) {
+            throw new ControllerNotFoundException("id not found " + id);
+        }
+    }
+
+
 
     @Transactional(readOnly = true)
     public PlayersDTO findById(Long id) {
@@ -41,10 +68,20 @@ public class PlayersService {
         return new PlayersDTO(entity);
     }
 
-    public void copyDtoToEntity(PlayersDTO playersDTO, Players player){
-        player.setName(playersDTO.getName());
-        player.setUsername(playersDTO.getUsername());
+    @Transactional
+    public void delete(Long id) {
+        try {
+            playersRepository.deleteById(id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new ControllerNotFoundException("id not found " + id);
+        }
     }
+
+    public void copyDtoToEntity(PlayersDTO playersDTO, Players player){
+
+        player.setName(playersDTO.getName());
+    }
+
 
 
 }

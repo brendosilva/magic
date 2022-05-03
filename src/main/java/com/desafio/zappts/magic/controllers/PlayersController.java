@@ -2,6 +2,7 @@ package com.desafio.zappts.magic.controllers;
 
 import com.desafio.zappts.magic.dto.PlayersDTO;
 import com.desafio.zappts.magic.services.PlayersService;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -38,5 +39,18 @@ public class PlayersController {
                 .toUri();
 
                 return ResponseEntity.created(uri).body(playersDTO);
+    }
+
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<PlayersDTO> update(@PathVariable final Long id, @RequestBody final PlayersDTO dto){
+        PlayersDTO playerDto = playersService.update(id, dto);
+        return ResponseEntity.ok().body(playerDto);
+    }
+
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<PlayersDTO> delete(@PathVariable final Long id){
+        playersService.delete(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
